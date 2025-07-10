@@ -193,7 +193,7 @@ class RemoteMCPToolset(BaseMCPToolset):
             v = v.rstrip("/") + "/sse"
         return v
 
-    def _create_tools(self, tools: List[MCP_Tool]) -> List[RemoteMCPTool]:
+    def _create_tools(self, tools: List[MCP_Tool]) -> List[Tool]:
         return [
             RemoteMCPTool.create(str(self.url), tool, self.get_headers())
             for tool in tools
@@ -223,7 +223,7 @@ class StdioMCPToolset(BaseMCPToolset):
     args: List[str] = Field(default_factory=list)
     tools: List[StdioMCPTool] = Field(default_factory=list)  # type: ignore
 
-    def _create_tools(self, tools: List[MCP_Tool]) -> List[StdioMCPTool]:
+    def _create_tools(self, tools: List[MCP_Tool]) -> List[Tool]:
         server_params = StdioServerParameters(command=self.command, args=self.args)
 
         return [

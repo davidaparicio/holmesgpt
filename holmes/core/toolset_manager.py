@@ -24,7 +24,7 @@ class ToolsetManager:
     def __init__(
         self,
         toolsets: Optional[dict[str, dict[str, Any]]] = None,
-        mcp_servers: Optional[List[dict[str, Any]]] = None,
+        mcp_servers: Optional[dict[str, dict[str, Any]]] = None,
         custom_toolsets: Optional[List[FilePath]] = None,
         custom_toolsets_from_cli: Optional[List[FilePath]] = None,
         toolset_status_location: Optional[FilePath] = None,
