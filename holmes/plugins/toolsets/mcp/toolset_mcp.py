@@ -142,9 +142,7 @@ class BaseMCPToolset(Toolset):
 
     name: str
     description: str = "MCP toolset for managing and invoking tools from an MCP server."
-    icon_url: str = (
-        "https://registry.npmmirror.com/@lobehub/icons-static-png/1.46.0/files/light/mcp.png"
-    )
+    icon_url: str = "https://registry.npmmirror.com/@lobehub/icons-static-png/1.46.0/files/light/mcp.png"
 
     def model_post_init(self, __context: Any) -> None:
         self.prerequisites = [CallablePrerequisite(callable=self.init_server_tools)]
@@ -226,7 +224,6 @@ class StdioMCPToolset(BaseMCPToolset):
     tools: List[StdioMCPTool] = Field(default_factory=list)  # type: ignore
 
     def _create_tools(self, tools: List[MCP_Tool]) -> List[StdioMCPTool]:
-
         server_params = StdioServerParameters(command=self.command, args=self.args)
 
         return [
