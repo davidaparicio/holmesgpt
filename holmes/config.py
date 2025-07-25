@@ -9,8 +9,6 @@ from typing import Any, List, Optional, Union
 import yaml  # type: ignore
 from pydantic import BaseModel, ConfigDict, FilePath, SecretStr
 
-from holmes import get_version  # type: ignore
-from holmes.clients.robusta_client import HolmesInfo, fetch_holmes_info
 from holmes.common.env_vars import ROBUSTA_AI, ROBUSTA_API_ENDPOINT, ROBUSTA_CONFIG_PATH
 from holmes.core.llm import LLM, DefaultLLM
 from holmes.core.runbooks import RunbookManager
@@ -39,6 +37,7 @@ DEFAULT_CONFIG_LOCATION = os.path.expanduser("~/.holmes/config.yaml")
 MODEL_LIST_FILE_LOCATION = os.environ.get(
     "MODEL_LIST_FILE_LOCATION", "/etc/holmes/config/model_list.yaml"
 )
+ROBUSTA_AI_MODEL_NAME = "Robusta"
 
 
 class SupportedTicketSources(str, Enum):
@@ -58,7 +57,7 @@ def is_old_toolset_config(
 def parse_models_file(path: str):
     models = load_yaml_file(path, raise_error=False, warn_not_found=False)
 
-    for model, params in models.items():
+    for _, params in models.items():
         params = replace_env_vars_values(params)
 
     return models
@@ -109,31 +108,14 @@ class Config(RobustaBaseConfig):
     # custom_toolsets_from_cli is passed from CLI option `--custom-toolsets` as 'experimental' custom toolsets.
     # The status of toolset here won't be cached, so the toolset from cli will always be loaded when specified in the CLI.
     custom_toolsets_from_cli: Optional[List[FilePath]] = None
+    should_try_robusta_ai: bool = False  # if True, we will try to load the Robusta AI model, in cli we aren't trying to load it.
 
     toolsets: Optional[dict[str, dict[str, Any]]] = None
 
     mcp_servers: Optional[dict[str, dict[str, Any]]] = None
     _server_tool_executor: Optional[ToolExecutor] = None
 
-    _version: Optional[str] = None
-    _holmes_info: Optional[HolmesInfo] = None
-
     _toolset_manager: Optional[ToolsetManager] = None
-
-    @property
-    def is_latest_version(self) -> bool:
-        if (
-            not self._holmes_info
-            or not self._holmes_info.latest_version
-            or not self._version
-        ):
-            # We couldn't resolve version, assume we are running the latest version
-            return True
-        if self._version.startswith("dev-"):
-            # dev versions are considered to be the latest version
-            return True
-
-        return self._version.startswith(self._holmes_info.latest_version)
 
     @property
     def toolset_manager(self) -> ToolsetManager:
@@ -147,22 +129,35 @@ class Config(RobustaBaseConfig):
         return self._toolset_manager
 
     def model_post_init(self, __context: Any) -> None:
-        self._version = get_version()
-        self._holmes_info = fetch_holmes_info()
         self._model_list = parse_models_file(MODEL_LIST_FILE_LOCATION)
-        if ROBUSTA_AI:
-            self._model_list["Robusta"] = {
+        if self._should_load_robusta_ai():
+            logging.info("Loading Robusta AI model")
+            self._model_list[ROBUSTA_AI_MODEL_NAME] = {
                 "base_url": ROBUSTA_API_ENDPOINT,
             }
+
+    def _should_load_robusta_ai(self) -> bool:
+        if not self.should_try_robusta_ai:
+            return False
+
+        # ROBUSTA_AI were set in the env vars, so we can use it directly
+        if ROBUSTA_AI is not None:
+            return ROBUSTA_AI
+
+        # MODEL is set in the env vars, e.g. the user is using a custom model
+        # so we don't need to load the robusta AI model and keep the behavior backward compatible
+        if "MODEL" in os.environ:
+            return False
+
+        # if the user has provided a model list, we don't need to load the robusta AI model
+        if self._model_list:
+            return False
+
+        return True
 
     def log_useful_info(self):
         if self._model_list:
             logging.info(f"loaded models: {list(self._model_list.keys())}")
-
-        if not self.is_latest_version and self._holmes_info:
-            logging.warning(
-                f"You are running version {self._version} of holmes, but the latest version is {self._holmes_info.latest_version}. Please update.",
-            )
 
     @classmethod
     def load_from_file(cls, config_file: Optional[Path], **kwargs) -> "Config":
@@ -222,6 +217,7 @@ class Config(RobustaBaseConfig):
             if val is not None:
                 kwargs[field_name] = val
         kwargs["cluster_name"] = Config.__get_cluster_name()
+        kwargs["should_try_robusta_ai"] = True
         result = cls(**kwargs)
         result.log_useful_info()
         return result
@@ -251,7 +247,9 @@ class Config(RobustaBaseConfig):
         runbook_catalog = load_runbook_catalog()
         return runbook_catalog
 
-    def create_console_tool_executor(self, dal: Optional[SupabaseDal]) -> ToolExecutor:
+    def create_console_tool_executor(
+        self, dal: Optional[SupabaseDal], refresh_status: bool = False
+    ) -> ToolExecutor:
         """
         Creates a ToolExecutor instance configured for CLI usage. This executor manages the available tools
         and their execution in the command-line interface.
@@ -261,7 +259,9 @@ class Config(RobustaBaseConfig):
         2. toolsets from config file will override and be merged into built-in toolsets with the same name.
         3. Custom toolsets from config files which can not override built-in toolsets
         """
-        cli_toolsets = self.toolset_manager.list_console_toolsets(dal=dal)
+        cli_toolsets = self.toolset_manager.list_console_toolsets(
+            dal=dal, refresh_status=refresh_status
+        )
         return ToolExecutor(cli_toolsets)
 
     def create_tool_executor(self, dal: Optional[SupabaseDal]) -> ToolExecutor:
@@ -283,19 +283,32 @@ class Config(RobustaBaseConfig):
         return self._server_tool_executor
 
     def create_console_toolcalling_llm(
-        self, dal: Optional[SupabaseDal] = None
+        self,
+        dal: Optional[SupabaseDal] = None,
+        refresh_toolsets: bool = False,
+        tracer=None,
     ) -> ToolCallingLLM:
-        tool_executor = self.create_console_tool_executor(dal)
-        return ToolCallingLLM(tool_executor, self.max_steps, self._get_llm())
+        tool_executor = self.create_console_tool_executor(dal, refresh_toolsets)
+        return ToolCallingLLM(
+            tool_executor, self.max_steps, self._get_llm(tracer=tracer)
+        )
 
     def create_toolcalling_llm(
-        self, dal: Optional[SupabaseDal] = None, model: Optional[str] = None
+        self,
+        dal: Optional[SupabaseDal] = None,
+        model: Optional[str] = None,
+        tracer=None,
     ) -> ToolCallingLLM:
         tool_executor = self.create_tool_executor(dal)
-        return ToolCallingLLM(tool_executor, self.max_steps, self._get_llm(model))
+        return ToolCallingLLM(
+            tool_executor, self.max_steps, self._get_llm(model, tracer)
+        )
 
     def create_issue_investigator(
-        self, dal: Optional[SupabaseDal] = None, model: Optional[str] = None
+        self,
+        dal: Optional[SupabaseDal] = None,
+        model: Optional[str] = None,
+        tracer=None,
     ) -> IssueInvestigator:
         all_runbooks = load_builtin_runbooks()
         for runbook_path in self.custom_runbooks:
@@ -304,7 +317,7 @@ class Config(RobustaBaseConfig):
         runbook_manager = RunbookManager(all_runbooks)
         tool_executor = self.create_tool_executor(dal)
         return IssueInvestigator(
-            tool_executor, runbook_manager, self.max_steps, self._get_llm(model)
+            tool_executor, runbook_manager, self.max_steps, self._get_llm(model, tracer)
         )
 
     def create_console_issue_investigator(
@@ -413,7 +426,7 @@ class Config(RobustaBaseConfig):
             raise ValueError("--slack-channel must be specified")
         return SlackDestination(self.slack_token.get_secret_value(), self.slack_channel)
 
-    def _get_llm(self, model_key: Optional[str] = None) -> LLM:
+    def _get_llm(self, model_key: Optional[str] = None, tracer=None) -> LLM:
         api_key = self.api_key.get_secret_value() if self.api_key else None
         model = self.model
         model_params = {}
@@ -427,7 +440,7 @@ class Config(RobustaBaseConfig):
             api_key = model_params.pop("api_key", api_key)
             model = model_params.pop("model", model)
 
-        return DefaultLLM(model, api_key, model_params)  # type: ignore
+        return DefaultLLM(model, api_key, model_params, tracer)  # type: ignore
 
     def get_models_list(self) -> List[str]:
         if self._model_list:

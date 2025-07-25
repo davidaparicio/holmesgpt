@@ -16,7 +16,11 @@ from holmes.plugins.toolsets.bash.bash_toolset import BashExecutorToolset
 from holmes.plugins.toolsets.coralogix.toolset_coralogix_logs import (
     CoralogixLogsToolset,
 )
-from holmes.plugins.toolsets.datadog import DatadogToolset
+from holmes.plugins.toolsets.datadog.toolset_datadog_logs import DatadogLogsToolset
+from holmes.plugins.toolsets.datadog.toolset_datadog_metrics import (
+    DatadogMetricsToolset,
+)
+from holmes.plugins.toolsets.datadog.toolset_datadog_traces import DatadogTracesToolset
 from holmes.plugins.toolsets.git import GitToolset
 from holmes.plugins.toolsets.grafana.toolset_grafana import GrafanaToolset
 from holmes.plugins.toolsets.grafana.toolset_grafana_loki import GrafanaLokiToolset
@@ -34,6 +38,7 @@ from holmes.plugins.toolsets.prometheus.prometheus import PrometheusToolset
 from holmes.plugins.toolsets.rabbitmq.toolset_rabbitmq import RabbitMQToolset
 from holmes.plugins.toolsets.robusta.robusta import RobustaToolset
 from holmes.plugins.toolsets.runbook.runbook_fetcher import RunbookToolset
+from holmes.plugins.toolsets.servicenow.servicenow import ServiceNowToolset
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -67,7 +72,9 @@ def load_python_toolsets(dal: Optional[SupabaseDal]) -> List[Toolset]:
         GrafanaToolset(),
         NotionToolset(),
         KafkaToolset(),
-        DatadogToolset(),
+        DatadogLogsToolset(),
+        DatadogMetricsToolset(),
+        DatadogTracesToolset(),
         PrometheusToolset(),
         OpenSearchLogsToolset(),
         OpenSearchTracesToolset(),
@@ -78,6 +85,7 @@ def load_python_toolsets(dal: Optional[SupabaseDal]) -> List[Toolset]:
         MongoDBAtlasToolset(),
         RunbookToolset(),
         AzureSQLToolset(),
+        ServiceNowToolset(),
     ]
     if not USE_LEGACY_KUBERNETES_LOGS:
         toolsets.append(KubernetesLogsToolset())

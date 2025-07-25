@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 from datetime import datetime
 
-from holmes.common.env_vars import load_bool
+from holmes.core.tracing import TracingFactory
 from holmes.core.conversations import build_chat_messages
 from holmes.core.llm import DefaultLLM
 from holmes.core.models import ChatRequest
@@ -14,13 +14,28 @@ from holmes.core.tool_calling_llm import LLMResult, ToolCallingLLM
 from holmes.core.tools_utils.tool_executor import ToolExecutor
 import tests.llm.utils.braintrust as braintrust_util
 from tests.llm.utils.classifiers import evaluate_correctness
-from tests.llm.utils.commands import after_test, before_test
+from tests.llm.utils.commands import set_test_env_vars
 from tests.llm.utils.constants import PROJECT
-from tests.llm.utils.mock_toolset import MockToolsets
-from braintrust import Span, SpanTypeAttribute
-from tests.llm.utils.mock_utils import AskHolmesTestCase, Evaluation, MockHelper
+from tests.llm.utils.mock_toolset import (
+    MockToolsetManager,
+    MockMode,
+    MockGenerationConfig,
+)
+from tests.llm.utils.test_case_utils import AskHolmesTestCase, Evaluation, MockHelper
+from tests.llm.utils.property_manager import (
+    set_initial_properties,
+    update_test_results,
+    update_mock_error,
+)
 from os import path
 from tests.llm.utils.tags import add_tags_to_eval
+from holmes.core.tracing import SpanType
+from tests.llm.utils.test_helpers import (
+    print_expected_output,
+    print_correctness_evaluation,
+    print_tool_calls_summary,
+    print_tool_calls_detailed,
+)
 
 TEST_CASES_FOLDER = Path(
     path.abspath(path.join(path.dirname(__file__), "fixtures", "test_ask_holmes"))
@@ -60,51 +75,119 @@ def idfn(val):
 
 @pytest.mark.llm
 @pytest.mark.parametrize("experiment_name, test_case", get_test_cases(), ids=idfn)
-def test_ask_holmes(experiment_name: str, test_case: AskHolmesTestCase, caplog):
-    dataset_name = braintrust_util.get_dataset_name("ask_holmes")
-    bt_helper = braintrust_util.BraintrustEvalHelper(
-        project_name=PROJECT, dataset_name=dataset_name
+def test_ask_holmes(
+    experiment_name: str,
+    test_case: AskHolmesTestCase,
+    caplog,
+    request,
+    mock_generation_config: MockGenerationConfig,
+    shared_test_infrastructure,  # type: ignore
+):
+    # Set initial properties early so they're available even if test fails
+    set_initial_properties(request, test_case)
+
+    print(f"\n🧪 TEST: {test_case.id}")
+    print("   CONFIGURATION:")
+    print(
+        f"   • Mode: {'⚪️ MOCKED' if mock_generation_config.mode == MockMode.MOCK else '🔥 LIVE'}, Generate Mocks: {mock_generation_config.generate_mocks}"
+    )
+    print(f"   • User Prompt: {test_case.user_prompt}")
+    print(f"   • Expected Output: {test_case.expected_output}")
+    if test_case.before_test:
+        if "\n" in test_case.before_test:
+            print("   • Before Test:")
+            for line in test_case.before_test.strip().split("\n"):
+                print(f"       {line}")
+        else:
+            print(f"   • Before Test: {test_case.before_test}")
+
+    if test_case.after_test:
+        if "\n" in test_case.after_test:
+            print("   • After Test:")
+            for line in test_case.after_test.strip().split("\n"):
+                print(f"       {line}")
+        else:
+            print(f"   • After Test: {test_case.after_test}")
+
+    tracer = TracingFactory.create_tracer("braintrust", project=PROJECT)
+    tracer.start_experiment(
+        experiment_name=experiment_name,
+        metadata=braintrust_util.get_machine_state_tags(),
     )
 
-    eval_span = bt_helper.start_evaluation(experiment_name, name=test_case.id)
     result: Optional[LLMResult] = None
+
     try:
-        with eval_span.start_span("Before Test Setup", type=SpanTypeAttribute.TASK):
-            before_test(test_case)
-
-        # Mock datetime if mocked_date is provided
-        if test_case.mocked_date:
-            mocked_datetime = datetime.fromisoformat(
-                test_case.mocked_date.replace("Z", "+00:00")
-            )
-            with patch("holmes.plugins.prompts.datetime") as mock_datetime:
-                mock_datetime.now.return_value = mocked_datetime
-
-                mock_datetime.side_effect = None
-                mock_datetime.configure_mock(
-                    **{"now.return_value": mocked_datetime, "side_effect": None}
+        with tracer.start_trace(
+            name=test_case.id, span_type=SpanType.EVAL
+        ) as eval_span:
+            # Store span info in user properties for conftest to access
+            if hasattr(eval_span, "id"):
+                request.node.user_properties.append(
+                    ("braintrust_span_id", str(eval_span.id))
                 )
-                with eval_span.start_span("Holmes Run", type=SpanTypeAttribute.LLM):
-                    result = ask_holmes(test_case=test_case, parent_span=eval_span)
-        else:
-            with eval_span.start_span("Holmes Run", type=SpanTypeAttribute.LLM):
-                result = ask_holmes(test_case=test_case, parent_span=eval_span)
+            if hasattr(eval_span, "root_span_id"):
+                request.node.user_properties.append(
+                    ("braintrust_root_span_id", str(eval_span.root_span_id))
+                )
+
+            # Mock datetime if mocked_date is provided
+            if test_case.mocked_date:
+                mocked_datetime = datetime.fromisoformat(
+                    test_case.mocked_date.replace("Z", "+00:00")
+                )
+                with patch("holmes.plugins.prompts.datetime") as mock_datetime:
+                    mock_datetime.now.return_value = mocked_datetime
+
+                    mock_datetime.side_effect = None
+                    mock_datetime.configure_mock(
+                        **{"now.return_value": mocked_datetime, "side_effect": None}
+                    )
+                    with set_test_env_vars(test_case):
+                        result = ask_holmes(
+                            test_case=test_case,
+                            tracer=tracer,
+                            mock_generation_config=mock_generation_config,
+                            request=request,
+                        )
+            else:
+                with set_test_env_vars(test_case):
+                    result = ask_holmes(
+                        test_case=test_case,
+                        tracer=tracer,
+                        mock_generation_config=mock_generation_config,
+                        request=request,
+                    )
 
     except Exception as e:
-        bt_helper.end_evaluation(
-            input=test_case.user_prompt,
-            output=result.result if result else str(e),
-            expected=test_case.expected_output,
-            id=test_case.id,
-            scores={},
-            prompt=None,
+        # Log error to span if available
+        try:
+            if "eval_span" in locals():
+                eval_span.log(
+                    input=test_case.user_prompt,
+                    output=result.result if result else str(e),
+                    expected=test_case.expected_output,
+                    dataset_record_id=test_case.id,
+                    scores={},
+                )
+        except Exception:
+            pass  # Don't fail the test due to logging issues
+
+        # Check if this is a MockDataError
+        is_mock_error = "MockDataError" in type(e).__name__ or any(
+            "MockData" in base.__name__ for base in type(e).__mro__
         )
-        after_test(test_case)
+
+        if is_mock_error:
+            # Update properties for mock error
+            update_mock_error(request, e)
+
+        # Cleanup is handled by session-scoped fixture now
         raise
 
     finally:
-        with eval_span.start_span("After Test Teardown", type=SpanTypeAttribute.TASK):
-            after_test(test_case)
+        # Cleanup is handled by session-scoped fixture now
+        pass
 
     input = test_case.user_prompt
     output = result.result
@@ -115,8 +198,7 @@ def test_ask_holmes(experiment_name: str, test_case: AskHolmesTestCase, caplog):
     if not isinstance(expected, list):
         expected = [expected]
 
-    debug_expected = "\n-  ".join(expected)
-    print(f"** EXPECTED **\n-  {debug_expected}")
+    print_expected_output(expected)
 
     prompt = (
         result.messages[0]["content"]
@@ -135,63 +217,98 @@ def test_ask_holmes(experiment_name: str, test_case: AskHolmesTestCase, caplog):
         evaluation_type=evaluation_type,
         caplog=caplog,
     )
-    print(
-        f"\n** CORRECTNESS **\nscore = {correctness_eval.score}\n{correctness_eval.metadata.get('rationale', '')}"
-    )
+    print("\n💬 ACTUAL OUTPUT:")
+    print(f"   {output}")
+
+    print_correctness_evaluation(correctness_eval)
 
     scores["correctness"] = correctness_eval.score
 
-    bt_helper.end_evaluation(
-        input=input,
-        output=output or "",
-        expected=str(expected),
-        id=test_case.id,
-        scores=scores,
-        prompt=prompt,
-    )
+    # Log evaluation results directly to the span
+    if eval_span:
+        eval_span.log(
+            input=input,
+            output=output or "",
+            expected=str(expected),
+            dataset_record_id=test_case.id,
+            scores=scores,
+            metadata={"system_prompt": prompt},
+        )
+
+    # Print tool calls summary
+    print_tool_calls_summary(result.tool_calls)
 
     if result.tool_calls:
         tools_called = [tc.description for tc in result.tool_calls]
     else:
         tools_called = "None"
-    print(f"\n** TOOLS CALLED **\n{tools_called}")
-    print(f"\n** OUTPUT **\n{output}")
-    print(f"\n** SCORES **\n{scores}")
 
-    if test_case.evaluation.correctness:
-        expected_correctness = test_case.evaluation.correctness
-        if isinstance(expected_correctness, Evaluation):
-            expected_correctness = expected_correctness.expected_score
-        assert scores.get("correctness", 0) >= expected_correctness
+    # Print detailed tool output
+    print_tool_calls_detailed(result.tool_calls)
+
+    # Update test results
+    update_test_results(request, output, tools_called, scores)
+
+    # Check if the output contains MockDataError (indicating a mock failure)
+    if output and any(
+        error_type in output
+        for error_type in [
+            "MockDataError",
+            "MockDataNotFoundError",
+            "MockDataCorruptedError",
+        ]
+    ):
+        # Record mock failure in user_properties
+        request.node.user_properties.append(("mock_data_failure", True))
+        # Fail the test
+        # Get expected from test_case since debug_expected is no longer in local scope
+        expected_output = test_case.expected_output
+        if isinstance(expected_output, list):
+            expected_output = "\n-  ".join(expected_output)
+        pytest.fail(
+            f"Test {test_case.id} failed due to mock data error\nActual: {output}\nExpected: {expected_output}"
+        )
+
+    # Get expected for assertion message
+    expected_output = test_case.expected_output
+    if isinstance(expected_output, list):
+        expected_output = "\n-  ".join(expected_output)
+
+    assert (
+        int(scores.get("correctness", 0)) == 1
+    ), f"Test {test_case.id} failed (score: {scores.get('correctness', 0)})\nActual: {output}\nExpected: {expected_output}"
 
 
-def ask_holmes(test_case: AskHolmesTestCase, parent_span: Optional[Span]) -> LLMResult:
-    run_live = load_bool("RUN_LIVE", default=False)
-    mock = MockToolsets(
-        generate_mocks=test_case.generate_mocks,
+def ask_holmes(
+    test_case: AskHolmesTestCase, tracer, mock_generation_config, request=None
+) -> LLMResult:
+    mock = MockToolsetManager(
         test_case_folder=test_case.folder,
-        run_live=run_live,
-        parent_span=parent_span,
+        mock_generation_config=mock_generation_config,
+        request=request,
     )
 
-    expected_tools = []
-    if not run_live:
-        for tool_mock in test_case.tool_mocks:
-            mock.mock_tool(tool_mock)
-            expected_tools.append(tool_mock.tool_name)
+    # With the new simplified mock system, mocks are loaded from disk on each tool invocation
+    # No need to populate mocks in memory anymore
 
     tool_executor = ToolExecutor(mock.enabled_toolsets)
     enabled_toolsets = [t.name for t in tool_executor.enabled_toolsets]
 
-    print(f"** ENABLED TOOLSETS **\n{', '.join(enabled_toolsets)}")
+    print(
+        f"\n🛠️  ENABLED TOOLSETS ({len(enabled_toolsets)}):", ", ".join(enabled_toolsets)
+    )
+
     ai = ToolCallingLLM(
         tool_executor=tool_executor,
         max_steps=10,
-        llm=DefaultLLM(os.environ.get("MODEL", "gpt-4o")),
+        llm=DefaultLLM(os.environ.get("MODEL", "gpt-4o"), tracer=tracer),
     )
 
     chat_request = ChatRequest(ask=test_case.user_prompt)
     messages = build_chat_messages(
         ask=chat_request.ask, conversation_history=test_case.conversation_history, ai=ai
     )
-    return ai.messages_call(messages=messages)
+
+    # Create LLM completion trace within current context
+    with tracer.start_trace("run holmes", span_type=SpanType.LLM) as llm_span:
+        return ai.messages_call(messages=messages, trace_span=llm_span)

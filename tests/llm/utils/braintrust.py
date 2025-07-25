@@ -2,12 +2,13 @@ import os
 import braintrust
 from braintrust import Dataset, Experiment, ReadonlyExperiment, Span
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional, Union
 
-from pydantic import BaseModel
 
-from tests.llm.utils.mock_utils import HolmesTestCase  # type: ignore
+from tests.llm.utils.test_case_utils import HolmesTestCase  # type: ignore
 from tests.llm.utils.system import get_machine_state_tags, readable_timestamp
+from holmes.core.tracing import DummySpan
+
 
 BRAINTRUST_API_KEY = os.environ.get("BRAINTRUST_API_KEY")
 
@@ -101,10 +102,12 @@ class BraintrustEvalHelper:
             return None
         return find_dataset_row_by_test_case(self.dataset, test_case)
 
-    def start_evaluation(self, experiment_name: str, name: str) -> Optional[Span]:
+    def start_evaluation(
+        self, experiment_name: str, name: str
+    ) -> Union[Span, DummySpan]:
         if not self.dataset:
             # braintrust is disabled
-            return None
+            return DummySpan()
         if not self.experiment:
             experiment: Experiment | ReadonlyExperiment = braintrust.init(
                 project=self.project_name,
@@ -122,8 +125,13 @@ class BraintrustEvalHelper:
                     "Experiment must be writable. The above options open=False and update=True ensure this is the case so this exception should never be raised"
                 )
             self.experiment = experiment  # type: ignore
-        self._root_span = self.experiment.start_span(name=name)  # type: ignore
-        return self._root_span
+
+        # Create the span directly from experiment (tests manage their own spans)
+        if self.experiment:
+            self._root_span = self.experiment.start_span(name=name)
+            return self._root_span
+        else:
+            return DummySpan()
 
     def end_evaluation(
         self,
@@ -167,24 +175,39 @@ def get_dataset_name(test_suite: str):
     return f"{test_suite}:{system_metadata.get('branch', 'unknown_branch')}"
 
 
-class ExperimentData(BaseModel):
-    experiment_name: str
-    records: List[Dict[str, Any]]
-    test_cases: List[Dict[str, Any]]
+def get_braintrust_url(
+    test_suite: str,
+    test_id: str,
+    test_name: str,
+    span_id: Optional[str] = None,
+    root_span_id: Optional[str] = None,
+) -> Optional[str]:
+    """Generate Braintrust URL for a test.
 
+    Args:
+        test_suite: Either "ask_holmes" or "investigate"
+        test_id: Test ID like "01"
+        test_name: Test name like "how_many_pods"
+        span_id: Optional span ID for direct linking
+        root_span_id: Optional root span ID for direct linking
 
-def get_experiment_results(project_name: str, test_suite: str) -> ExperimentData:
+    Returns:
+        Braintrust URL string, or None if Braintrust is not configured
+    """
+    from tests.llm.utils.constants import PROJECT
+
+    if not BRAINTRUST_API_KEY:
+        return None
+
     experiment_name = get_experiment_name(test_suite)
-    experiment = braintrust.init(
-        project=project_name, experiment=experiment_name, open=True
-    )
-    dataset = braintrust.init_dataset(
-        project=project_name, name=get_dataset_name(test_suite)
-    )
-    records = list(experiment.fetch())
-    test_cases = list(dataset.fetch())
-    return ExperimentData(
-        experiment_name=experiment_name,
-        records=records,  # type: ignore
-        test_cases=test_cases,  # type: ignore
-    )
+    braintrust_org = os.environ.get("BRAINTRUST_ORG", "robustadev")
+
+    # Build URL with available parameters
+    url = f"https://www.braintrust.dev/app/{braintrust_org}/p/{PROJECT}/experiments/{experiment_name}?c="
+
+    # Add span IDs if available
+    if span_id and root_span_id:
+        # Use span_id as r parameter and root_span_id as s parameter
+        url += f"&r={span_id}&s={root_span_id}"
+
+    return url
