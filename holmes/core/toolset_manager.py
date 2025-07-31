@@ -361,6 +361,7 @@ class ToolsetManager:
 
             for server_config in mcp_config.values():
                 server_config["type"] = ToolsetType.MCP.value
+                server_config["config"] = server_config.get("config", {})
 
             for toolset_config in toolsets_config.values():
                 toolset_config["path"] = toolset_path

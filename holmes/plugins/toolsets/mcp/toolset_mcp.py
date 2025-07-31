@@ -8,7 +8,7 @@ from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
 from mcp.types import CallToolResult
 from mcp.types import Tool as MCP_Tool
-from pydantic import AnyUrl, Field, field_validator
+from pydantic import AnyUrl, BaseModel, Field, field_validator
 
 from holmes.core.tools import (
     CallablePrerequisite,
@@ -142,7 +142,9 @@ class BaseMCPToolset(Toolset):
 
     name: str
     description: str = "MCP toolset for managing and invoking tools from an MCP server."
-    icon_url: str = "https://registry.npmmirror.com/@lobehub/icons-static-png/1.46.0/files/light/mcp.png"
+    icon_url: str = (
+        "https://registry.npmmirror.com/@lobehub/icons-static-png/1.46.0/files/light/mcp.png"
+    )
 
     def model_post_init(self, __context: Any) -> None:
         self.prerequisites = [CallablePrerequisite(callable=self.init_server_tools)]

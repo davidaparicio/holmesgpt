@@ -17,6 +17,7 @@ This guide provides step-by-step instructions for configuring HolmesGPT to conne
     holmes:
       mcp_servers:
         mcp_server_1:
+          type: "sse"
           # human-readable description of the mcp server (this is not seen by the AI model - its just for users)
           description: "Remote mcp server"
           url: "http://example.com:8000/sse"
