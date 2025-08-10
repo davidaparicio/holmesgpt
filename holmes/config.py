@@ -252,7 +252,7 @@ class Config(RobustaBaseConfig):
         return runbook_catalog
 
     def create_console_tool_executor(
-        self, dal: Optional["SupabaseDal"], refresh_status: bool = False
+        self, refresh_status: bool = False, skip_prerequisite_check: bool = False
     ) -> ToolExecutor:
         """
         Creates a ToolExecutor instance configured for CLI usage. This executor manages the available tools
@@ -264,7 +264,8 @@ class Config(RobustaBaseConfig):
         3. Custom toolsets from config files which can not override built-in toolsets
         """
         cli_toolsets = self.toolset_manager.list_console_toolsets(
-            dal=dal, refresh_status=refresh_status
+            refresh_status=refresh_status,
+            skip_prerequisite_check=skip_prerequisite_check,
         )
         return ToolExecutor(cli_toolsets)
 
@@ -288,11 +289,13 @@ class Config(RobustaBaseConfig):
 
     def create_console_toolcalling_llm(
         self,
-        dal: Optional["SupabaseDal"] = None,
         refresh_toolsets: bool = False,
         tracer=None,
+        skip_prerequisite_check: bool = False,
     ) -> "ToolCallingLLM":
-        tool_executor = self.create_console_tool_executor(dal, refresh_toolsets)
+        tool_executor = self.create_console_tool_executor(
+            refresh_toolsets, skip_prerequisite_check
+        )
         from holmes.core.tool_calling_llm import ToolCallingLLM
 
         return ToolCallingLLM(
@@ -346,7 +349,7 @@ class Config(RobustaBaseConfig):
         from holmes.core.runbooks import RunbookManager
 
         runbook_manager = RunbookManager(all_runbooks)
-        tool_executor = self.create_console_tool_executor(dal=dal)
+        tool_executor = self.create_console_tool_executor()
         from holmes.core.tool_calling_llm import IssueInvestigator
 
         return IssueInvestigator(

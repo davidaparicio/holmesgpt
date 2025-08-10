@@ -406,7 +406,7 @@ class Toolset(BaseModel):
 
         return interpolated_command
 
-    def check_prerequisites(self):
+    def check_prerequisites(self, quiet: bool = False):
         self.status = ToolsetStatusEnum.ENABLED
 
         for prereq in self.prerequisites:
@@ -444,7 +444,7 @@ class Toolset(BaseModel):
 
             elif isinstance(prereq, CallablePrerequisite):
                 try:
-                    (enabled, error_message) = prereq.callable(self.config)
+                    (enabled, error_message) = prereq.callable(self.config or {})
                     if not enabled:
                         self.status = ToolsetStatusEnum.FAILED
                     if error_message:
@@ -457,11 +457,13 @@ class Toolset(BaseModel):
                 self.status == ToolsetStatusEnum.DISABLED
                 or self.status == ToolsetStatusEnum.FAILED
             ):
-                logging.info(f"❌ Toolset {self.name}: {self.error}")
+                if not quiet:
+                    logging.info(f"❌ Toolset {self.name}: {self.error}")
                 # no point checking further prerequisites if one failed
                 return
 
-        logging.info(f"✅ Toolset {self.name}")
+        if not quiet:
+            logging.info(f"✅ Toolset {self.name}")
 
     @abstractmethod
     def get_example_config(self) -> Dict[str, Any]:
