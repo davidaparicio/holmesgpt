@@ -153,6 +153,7 @@ nav:
 
   - Data Sources:
       - data-sources/index.md
+      - Configuring Toolsets: data-sources/configuring-toolsets.md
       - Built-in Toolsets:
           - data-sources/builtin-toolsets/index.md
           - AKS Node Health: data-sources/builtin-toolsets/aks-node-health.md

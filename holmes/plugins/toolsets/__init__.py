@@ -9,7 +9,7 @@ from pydantic import ValidationError
 import holmes.utils.env as env_utils
 from holmes.common.env_vars import USE_LEGACY_KUBERNETES_LOGS
 from holmes.core.supabase_dal import SupabaseDal
-from holmes.core.tools import Toolset, ToolsetType, ToolsetYamlFromConfig, YAMLToolset
+from holmes.core.tools import Toolset, ToolsetType, YAMLToolset
 
 from holmes.plugins.toolsets.atlas_mongodb.mongodb_atlas import MongoDBAtlasToolset
 from holmes.plugins.toolsets.azure_sql.azure_sql_toolset import AzureSQLToolset
@@ -49,9 +49,7 @@ from holmes.plugins.toolsets.servicenow.servicenow import ServiceNowToolset
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def load_toolsets_from_file(
-    toolsets_path: str, strict_check: bool = True
-) -> List[Toolset]:
+def load_toolsets_from_file(toolsets_path: str) -> List[Toolset]:
     toolsets = []
     with open(toolsets_path) as file:
         parsed_yaml = yaml.safe_load(file)
@@ -61,7 +59,8 @@ def load_toolsets_from_file(
             )
         toolsets_dict = parsed_yaml.get("toolsets", {})
 
-        toolsets.extend(load_toolsets_from_config(toolsets_dict, strict_check))
+        # Note: strict_check parameter is no longer used, kept for backwards compatibility
+        toolsets.extend(load_toolsets_from_config(toolsets_dict))
 
     return toolsets
 
@@ -114,7 +113,7 @@ def load_builtin_toolsets(dal: Optional[SupabaseDal] = None) -> List[Toolset]:
             continue
 
         path = os.path.join(THIS_DIR, filename)
-        toolsets_from_file = load_toolsets_from_file(path, strict_check=True)
+        toolsets_from_file = load_toolsets_from_file(path)
         all_toolsets.extend(toolsets_from_file)
 
     all_toolsets.extend(load_python_toolsets(dal=dal))  # type: ignore
@@ -139,12 +138,11 @@ def is_old_toolset_config(
 
 def load_toolsets_from_config(
     toolsets: dict[str, dict[str, Any]],
-    strict_check: bool = True,
 ) -> List[Toolset]:
     """
-    Load toolsets from a dictionary or list of dictionaries.
-    :param toolsets: Dictionary of toolsets or list of toolset configurations.
-    :param strict_check: If True, all required fields for a toolset must be present.
+    Load NEW custom toolsets from a dictionary configuration.
+    Only used for creating new toolsets, not for configuring existing ones.
+    :param toolsets: Dictionary of toolset configurations.
     :return: List of validated Toolset objects.
     """
 
@@ -160,16 +158,13 @@ def load_toolsets_from_config(
     for name, config in toolsets.items():
         try:
             toolset_type = config.get("type", ToolsetType.BUILTIN.value)
-            # MCP server is not a built-in toolset, so we need to set the type explicitly
+            # MCP servers are identified by type='mcp'
             validated_toolset: Optional[Toolset] = None
             if toolset_type == ToolsetType.MCP.value:
                 validated_toolset = RemoteMCPToolset(**config, name=name)
-            elif strict_check:
-                validated_toolset = YAMLToolset(**config, name=name)  # type: ignore
             else:
-                validated_toolset = ToolsetYamlFromConfig(  # type: ignore
-                    **config, name=name
-                )
+                # Always require full validation for new toolsets
+                validated_toolset = YAMLToolset(**config, name=name)  # type: ignore
 
             if validated_toolset.config:
                 validated_toolset.config = env_utils.replace_env_vars_values(
@@ -177,9 +172,11 @@ def load_toolsets_from_config(
                 )
             loaded_toolsets.append(validated_toolset)
         except ValidationError as e:
-            logging.warning(f"Toolset '{name}' is invalid: {e}")
+            logging.error(f"Toolset '{name}' is invalid: {e}")
+            # Continue loading other toolsets instead of failing completely
 
-        except Exception:
-            logging.warning("Failed to load toolset: %s", name, exc_info=True)
+        except Exception as e:
+            logging.error(f"Failed to load toolset '{name}': {e}", exc_info=True)
+            # Continue loading other toolsets instead of failing completely
 
     return loaded_toolsets
