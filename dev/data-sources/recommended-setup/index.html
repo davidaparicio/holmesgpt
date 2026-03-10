@@ -4549,7 +4549,7 @@
 <p>After installing HolmesGPT and running your first investigation, connect your data sources so Holmes can perform deeper investigations.</p>
 <h2 id="how-holmes-works">How Holmes Works<a class="headerlink" href="#how-holmes-works" title="Permanent link">&para;</a></h2>
 <p>HolmesGPT is an AI troubleshooting agent that investigates issues by pulling data from your existing observability stack. The more data sources you connect, the more thoroughly Holmes can investigate — correlating metrics with logs, tracing infrastructure changes to application failures, and building a complete picture of what went wrong.</p>
-<p>Holmes works across cloud, on-premise, and hybrid environments. If you use Kubernetes, the Kubernetes toolsets are enabled automatically. Everything else — metrics, logs, cloud APIs, databases — is configured through toolsets you enable based on your stack.</p>
+<p>Holmes works across cloud, on-premise, and hybrid environments. If you use Kubernetes, the Kubernetes toolsets are enabled automatically. But Kubernetes is not required — Holmes works equally well with Prometheus, Datadog, Elasticsearch, AWS, GCP, databases, and <a href="../builtin-toolsets/">many other data sources</a>. Configure the toolsets that match your stack.</p>
 <h2 id="1-connect-a-metrics-provider">1. Connect a Metrics Provider<a class="headerlink" href="#1-connect-a-metrics-provider" title="Permanent link">&para;</a></h2>
 <p>Metrics give Holmes visibility into trends over time. Without metrics, Holmes can still investigate using logs and infrastructure state, but it won't be able to spot gradual degradation or correlate historical information as well. Metrics are also critical to answering numerical questions, like 'what is the error rate for service xyz?'</p>
 <p>Connect whichever metrics platform you already use:</p>
@@ -4587,13 +4587,13 @@
 <p><strong>Quick example</strong> (Prometheus):</p>
 <p>
 <div class="tabbed-set" data-tabs="1:3">
-<input checked="checked" id="__tabbed_59d63b1b_55ef_48b0_bf43_fbbbd362ab7b_1" name="__tabbed_59d63b1b_55ef_48b0_bf43_fbbbd362ab7b" type="radio">
-<input id="__tabbed_59d63b1b_55ef_48b0_bf43_fbbbd362ab7b_2" name="__tabbed_59d63b1b_55ef_48b0_bf43_fbbbd362ab7b" type="radio">
-<input id="__tabbed_59d63b1b_55ef_48b0_bf43_fbbbd362ab7b_3" name="__tabbed_59d63b1b_55ef_48b0_bf43_fbbbd362ab7b" type="radio">
+<input checked="checked" id="__tabbed_9b37e702_02d5_4936_81ec_1f9f45cf53b6_1" name="__tabbed_9b37e702_02d5_4936_81ec_1f9f45cf53b6" type="radio">
+<input id="__tabbed_9b37e702_02d5_4936_81ec_1f9f45cf53b6_2" name="__tabbed_9b37e702_02d5_4936_81ec_1f9f45cf53b6" type="radio">
+<input id="__tabbed_9b37e702_02d5_4936_81ec_1f9f45cf53b6_3" name="__tabbed_9b37e702_02d5_4936_81ec_1f9f45cf53b6" type="radio">
 <div class="tabbed-labels">
-<label for="__tabbed_59d63b1b_55ef_48b0_bf43_fbbbd362ab7b_1">Holmes CLI</label>
-<label for="__tabbed_59d63b1b_55ef_48b0_bf43_fbbbd362ab7b_2">Holmes Helm Chart</label>
-<label for="__tabbed_59d63b1b_55ef_48b0_bf43_fbbbd362ab7b_3">Robusta Helm Chart</label>
+<label for="__tabbed_9b37e702_02d5_4936_81ec_1f9f45cf53b6_1">Holmes CLI</label>
+<label for="__tabbed_9b37e702_02d5_4936_81ec_1f9f45cf53b6_2">Holmes Helm Chart</label>
+<label for="__tabbed_9b37e702_02d5_4936_81ec_1f9f45cf53b6_3">Robusta Helm Chart</label>
 </div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -4663,13 +4663,13 @@
 <p><strong>Quick example</strong> (Loki via Grafana):</p>
 <p>
 <div class="tabbed-set" data-tabs="1:3">
-<input checked="checked" id="__tabbed_8e8c303a_daca_4f25_9f18_c2f41c78c40a_1" name="__tabbed_8e8c303a_daca_4f25_9f18_c2f41c78c40a" type="radio">
-<input id="__tabbed_8e8c303a_daca_4f25_9f18_c2f41c78c40a_2" name="__tabbed_8e8c303a_daca_4f25_9f18_c2f41c78c40a" type="radio">
-<input id="__tabbed_8e8c303a_daca_4f25_9f18_c2f41c78c40a_3" name="__tabbed_8e8c303a_daca_4f25_9f18_c2f41c78c40a" type="radio">
+<input checked="checked" id="__tabbed_75b30cf4_db38_4147_8abc_281459b27003_1" name="__tabbed_75b30cf4_db38_4147_8abc_281459b27003" type="radio">
+<input id="__tabbed_75b30cf4_db38_4147_8abc_281459b27003_2" name="__tabbed_75b30cf4_db38_4147_8abc_281459b27003" type="radio">
+<input id="__tabbed_75b30cf4_db38_4147_8abc_281459b27003_3" name="__tabbed_75b30cf4_db38_4147_8abc_281459b27003" type="radio">
 <div class="tabbed-labels">
-<label for="__tabbed_8e8c303a_daca_4f25_9f18_c2f41c78c40a_1">Holmes CLI</label>
-<label for="__tabbed_8e8c303a_daca_4f25_9f18_c2f41c78c40a_2">Holmes Helm Chart</label>
-<label for="__tabbed_8e8c303a_daca_4f25_9f18_c2f41c78c40a_3">Robusta Helm Chart</label>
+<label for="__tabbed_75b30cf4_db38_4147_8abc_281459b27003_1">Holmes CLI</label>
+<label for="__tabbed_75b30cf4_db38_4147_8abc_281459b27003_2">Holmes Helm Chart</label>
+<label for="__tabbed_75b30cf4_db38_4147_8abc_281459b27003_3">Robusta Helm Chart</label>
 </div>
 <div class="tabbed-content">
 <div class="tabbed-block">
