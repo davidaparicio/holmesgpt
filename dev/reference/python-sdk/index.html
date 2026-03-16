@@ -3217,6 +3217,8 @@
       
         
       
+        
+      
     
     
     
@@ -3300,11 +3302,43 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../development/evaluations/model-comparison-summary-20260315/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recommendations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
         
           
+        
+      
+        
+      
         
       
         
@@ -3339,7 +3373,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_4" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -3361,14 +3395,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_8_3" id="__nav_8_3_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_8_4" id="__nav_8_4_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3378,6 +3412,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/evaluations/history/results_20260315_041151/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ⚡ March 15, 2026
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -3647,6 +3709,34 @@
     
   
     September 28, 2025
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/evaluations/history/frontier_5_models_20260314_204516/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Frontier 5: Claude, GPT, Gemini, DeepSeek (n=5)
   
 
     
@@ -5022,7 +5112,7 @@
 <tr>
 <td><code>max_steps</code></td>
 <td><code>int</code></td>
-<td><code>40</code></td>
+<td><code>100</code></td>
 <td>Maximum tool-calling steps per request.</td>
 </tr>
 <tr>
@@ -5089,24 +5179,19 @@
 </thead>
 <tbody>
 <tr>
-<td><code>call(messages)</code></td>
+<td><code>call(messages, approval_callback=None)</code></td>
 <td><code>LLMResult</code></td>
 <td>Run a tool-calling conversation with a full message list.</td>
 </tr>
 <tr>
-<td><code>prompt_call(system_prompt, user_prompt)</code></td>
-<td><code>LLMResult</code></td>
-<td>Single-turn call with system and user prompts.</td>
-</tr>
-<tr>
-<td><code>messages_call(messages)</code></td>
-<td><code>LLMResult</code></td>
-<td>Call with a message list (simpler signature than <code>call</code>).</td>
+<td><code>call_stream(msgs)</code></td>
+<td><code>Generator[StreamMessage]</code></td>
+<td>Streaming version that yields events between iterations.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="llmresult"><code>LLMResult</code><a class="headerlink" href="#llmresult" title="Permanent link">&para;</a></h3>
-<p>Response object returned by <code>call()</code> and <code>prompt_call()</code>.</p>
+<p>Response object returned by <code>call()</code>.</p>
 <table>
 <thead>
 <tr>
