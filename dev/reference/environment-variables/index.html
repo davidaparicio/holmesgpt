@@ -7049,13 +7049,13 @@ silently weakens the signature and lets a client forge approval tokens.</p>
 <p>Overrides the URL LiteLLM fetches the model catalog (<code>model_prices_and_context_window.json</code>) from. LiteLLM uses that catalog to know each model's context window, max output tokens, and pricing. By default LiteLLM pulls it from <code>raw.githubusercontent.com</code>, which is unreachable from networks that block GitHub egress.</p>
 <p>Robusta hosts a mirror of the same file in each region. Pick the URL matching your Robusta region:</p>
 <div class="tabbed-set" data-tabs="1:3">
-<input checked="checked" id="__tabbed_1c4ac2b5_8215_4dc9_89a0_2d2a158cad96_1" name="__tabbed_1c4ac2b5_8215_4dc9_89a0_2d2a158cad96" type="radio">
-<input id="__tabbed_1c4ac2b5_8215_4dc9_89a0_2d2a158cad96_2" name="__tabbed_1c4ac2b5_8215_4dc9_89a0_2d2a158cad96" type="radio">
-<input id="__tabbed_1c4ac2b5_8215_4dc9_89a0_2d2a158cad96_3" name="__tabbed_1c4ac2b5_8215_4dc9_89a0_2d2a158cad96" type="radio">
+<input checked="checked" id="__tabbed_61e464d8_7b09_4075_b06e_682af3290a18_1" name="__tabbed_61e464d8_7b09_4075_b06e_682af3290a18" type="radio">
+<input id="__tabbed_61e464d8_7b09_4075_b06e_682af3290a18_2" name="__tabbed_61e464d8_7b09_4075_b06e_682af3290a18" type="radio">
+<input id="__tabbed_61e464d8_7b09_4075_b06e_682af3290a18_3" name="__tabbed_61e464d8_7b09_4075_b06e_682af3290a18" type="radio">
 <div class="tabbed-labels">
-<label for="__tabbed_1c4ac2b5_8215_4dc9_89a0_2d2a158cad96_1">US</label>
-<label for="__tabbed_1c4ac2b5_8215_4dc9_89a0_2d2a158cad96_2">EU</label>
-<label for="__tabbed_1c4ac2b5_8215_4dc9_89a0_2d2a158cad96_3">AP</label>
+<label for="__tabbed_61e464d8_7b09_4075_b06e_682af3290a18_1">US</label>
+<label for="__tabbed_61e464d8_7b09_4075_b06e_682af3290a18_2">EU</label>
+<label for="__tabbed_61e464d8_7b09_4075_b06e_682af3290a18_3">AP</label>
 </div>
 <div class="tabbed-content">
 <div class="tabbed-block"><pre><code>https://api.robusta.dev/litellm/model_prices_and_context_window.json</code></pre></div>
@@ -7066,13 +7066,13 @@ silently weakens the signature and lets a client forge approval tokens.</p>
 <p>The mirror is cached and falls back to its last-known-good copy if the upstream is temporarily unreachable, so pointing at it gives the same freshness as the default URL without requiring egress to <code>raw.githubusercontent.com</code>.</p>
 <p><strong>Helm example:</strong></p>
 <div class="tabbed-set" data-tabs="1:3">
-<input checked="checked" id="__tabbed_ab534122_13db_48db_b7b9_bc3ccdb82ad8_1" name="__tabbed_ab534122_13db_48db_b7b9_bc3ccdb82ad8" type="radio">
-<input id="__tabbed_ab534122_13db_48db_b7b9_bc3ccdb82ad8_2" name="__tabbed_ab534122_13db_48db_b7b9_bc3ccdb82ad8" type="radio">
-<input id="__tabbed_ab534122_13db_48db_b7b9_bc3ccdb82ad8_3" name="__tabbed_ab534122_13db_48db_b7b9_bc3ccdb82ad8" type="radio">
+<input checked="checked" id="__tabbed_4bc910c9_2b5b_4815_b72f_1ed8761f2400_1" name="__tabbed_4bc910c9_2b5b_4815_b72f_1ed8761f2400" type="radio">
+<input id="__tabbed_4bc910c9_2b5b_4815_b72f_1ed8761f2400_2" name="__tabbed_4bc910c9_2b5b_4815_b72f_1ed8761f2400" type="radio">
+<input id="__tabbed_4bc910c9_2b5b_4815_b72f_1ed8761f2400_3" name="__tabbed_4bc910c9_2b5b_4815_b72f_1ed8761f2400" type="radio">
 <div class="tabbed-labels">
-<label for="__tabbed_ab534122_13db_48db_b7b9_bc3ccdb82ad8_1">US</label>
-<label for="__tabbed_ab534122_13db_48db_b7b9_bc3ccdb82ad8_2">EU</label>
-<label for="__tabbed_ab534122_13db_48db_b7b9_bc3ccdb82ad8_3">AP</label>
+<label for="__tabbed_4bc910c9_2b5b_4815_b72f_1ed8761f2400_1">US</label>
+<label for="__tabbed_4bc910c9_2b5b_4815_b72f_1ed8761f2400_2">EU</label>
+<label for="__tabbed_4bc910c9_2b5b_4815_b72f_1ed8761f2400_3">AP</label>
 </div>
 <div class="tabbed-content">
 <div class="tabbed-block"><pre><code class="language-yaml">additionalEnvVars:
