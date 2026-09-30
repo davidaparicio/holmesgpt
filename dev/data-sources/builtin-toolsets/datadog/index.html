@@ -5936,7 +5936,7 @@
 </span></code></pre></div></p>
 <div class="admonition note">
 <p class="admonition-title">Namespace must match Holmes' deployment</p>
-<p>Create the secret in the same namespace where Holmes runs. The <code>-n holmes</code> flag in the <strong>Holmes Helm</strong> tab and <code>-n default</code> in the <strong>Robusta Helm</strong> tab match each chart's documented defaults — adjust if you installed Holmes/Robusta into a different namespace. A secret in the wrong namespace silently resolves to an empty env var and authentication will fail with no clear error.</p>
+<p>Create the secret in the same namespace where Holmes runs. The <code>-n holmes</code> flag in the <strong>Holmes Helm</strong> tab and <code>-n default</code> in the <strong>Robusta Helm</strong> tab are examples: use the namespace you installed the chart into. The Holmes install guide passes no <code>-n</code>, so it installs Holmes into your kubectl context's namespace, <code>default</code> unless you set another. <code>helm list -A</code> shows each release's namespace. If the secret is not in that namespace, the Holmes pod does not start: it stays in <code>CreateContainerConfigError</code> and its events show <code>Error: secret "&lt;name&gt;" not found</code>.</p>
 </div>
 <p>Then add to your Holmes Helm values:
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Load API keys from secret</span>
@@ -5992,7 +5992,7 @@
 </span></code></pre></div></p>
 <div class="admonition note">
 <p class="admonition-title">Namespace must match Holmes' deployment</p>
-<p>Create the secret in the same namespace where Holmes runs. The <code>-n holmes</code> flag in the <strong>Holmes Helm</strong> tab and <code>-n default</code> in the <strong>Robusta Helm</strong> tab match each chart's documented defaults — adjust if you installed Holmes/Robusta into a different namespace. A secret in the wrong namespace silently resolves to an empty env var and authentication will fail with no clear error.</p>
+<p>Create the secret in the same namespace where Holmes runs. The <code>-n holmes</code> flag in the <strong>Holmes Helm</strong> tab and <code>-n default</code> in the <strong>Robusta Helm</strong> tab are examples: use the namespace you installed the chart into. The Holmes install guide passes no <code>-n</code>, so it installs Holmes into your kubectl context's namespace, <code>default</code> unless you set another. <code>helm list -A</code> shows each release's namespace. If the secret is not in that namespace, the Holmes pod does not start: it stays in <code>CreateContainerConfigError</code> and its events show <code>Error: secret "&lt;name&gt;" not found</code>.</p>
 </div>
 <p>Then add to your Robusta Helm values:
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">holmes</span><span class="p">:</span>
@@ -6110,13 +6110,13 @@
 <p><strong>Configuration</strong></p>
 <p>
 <div class="tabbed-set" data-tabs="1:3">
-<input checked="checked" id="__tabbed_e187c78d_aa67_454f_b150_ff07f291933e_1" name="__tabbed_e187c78d_aa67_454f_b150_ff07f291933e" type="radio">
-<input id="__tabbed_e187c78d_aa67_454f_b150_ff07f291933e_2" name="__tabbed_e187c78d_aa67_454f_b150_ff07f291933e" type="radio">
-<input id="__tabbed_e187c78d_aa67_454f_b150_ff07f291933e_3" name="__tabbed_e187c78d_aa67_454f_b150_ff07f291933e" type="radio">
+<input checked="checked" id="__tabbed_a2668104_99ac_41d6_83f8_493f2523ae06_1" name="__tabbed_a2668104_99ac_41d6_83f8_493f2523ae06" type="radio">
+<input id="__tabbed_a2668104_99ac_41d6_83f8_493f2523ae06_2" name="__tabbed_a2668104_99ac_41d6_83f8_493f2523ae06" type="radio">
+<input id="__tabbed_a2668104_99ac_41d6_83f8_493f2523ae06_3" name="__tabbed_a2668104_99ac_41d6_83f8_493f2523ae06" type="radio">
 <div class="tabbed-labels">
-<label for="__tabbed_e187c78d_aa67_454f_b150_ff07f291933e_1">Holmes CLI</label>
-<label for="__tabbed_e187c78d_aa67_454f_b150_ff07f291933e_2">Holmes Helm Chart</label>
-<label for="__tabbed_e187c78d_aa67_454f_b150_ff07f291933e_3">Robusta Helm Chart</label>
+<label for="__tabbed_a2668104_99ac_41d6_83f8_493f2523ae06_1">Holmes CLI</label>
+<label for="__tabbed_a2668104_99ac_41d6_83f8_493f2523ae06_2">Holmes Helm Chart</label>
+<label for="__tabbed_a2668104_99ac_41d6_83f8_493f2523ae06_3">Robusta Helm Chart</label>
 </div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -6157,7 +6157,7 @@
 
 </code></pre>
 <p>Apply the configuration:</p>
-<pre><code class="language-bash">helm upgrade holmes holmes/holmes --values=values.yaml</code></pre>
+<pre><code class="language-bash">helm upgrade holmes robusta/holmes --values=values.yaml</code></pre>
 </div>
 <div class="tabbed-block">
 <p>When using the <strong>Robusta Helm Chart</strong> (which includes HolmesGPT), update your <code>generated_values.yaml</code>:</p>
@@ -6211,13 +6211,13 @@
 <p><strong>Configuration</strong></p>
 <p>
 <div class="tabbed-set" data-tabs="1:3">
-<input checked="checked" id="__tabbed_fd758b0f_71d9_4a7f_a170_82fe3fad5d4d_1" name="__tabbed_fd758b0f_71d9_4a7f_a170_82fe3fad5d4d" type="radio">
-<input id="__tabbed_fd758b0f_71d9_4a7f_a170_82fe3fad5d4d_2" name="__tabbed_fd758b0f_71d9_4a7f_a170_82fe3fad5d4d" type="radio">
-<input id="__tabbed_fd758b0f_71d9_4a7f_a170_82fe3fad5d4d_3" name="__tabbed_fd758b0f_71d9_4a7f_a170_82fe3fad5d4d" type="radio">
+<input checked="checked" id="__tabbed_ccc272d4_cfe2_4ce4_bb5c_ce0a4b8ec000_1" name="__tabbed_ccc272d4_cfe2_4ce4_bb5c_ce0a4b8ec000" type="radio">
+<input id="__tabbed_ccc272d4_cfe2_4ce4_bb5c_ce0a4b8ec000_2" name="__tabbed_ccc272d4_cfe2_4ce4_bb5c_ce0a4b8ec000" type="radio">
+<input id="__tabbed_ccc272d4_cfe2_4ce4_bb5c_ce0a4b8ec000_3" name="__tabbed_ccc272d4_cfe2_4ce4_bb5c_ce0a4b8ec000" type="radio">
 <div class="tabbed-labels">
-<label for="__tabbed_fd758b0f_71d9_4a7f_a170_82fe3fad5d4d_1">Holmes CLI</label>
-<label for="__tabbed_fd758b0f_71d9_4a7f_a170_82fe3fad5d4d_2">Holmes Helm Chart</label>
-<label for="__tabbed_fd758b0f_71d9_4a7f_a170_82fe3fad5d4d_3">Robusta Helm Chart</label>
+<label for="__tabbed_ccc272d4_cfe2_4ce4_bb5c_ce0a4b8ec000_1">Holmes CLI</label>
+<label for="__tabbed_ccc272d4_cfe2_4ce4_bb5c_ce0a4b8ec000_2">Holmes Helm Chart</label>
+<label for="__tabbed_ccc272d4_cfe2_4ce4_bb5c_ce0a4b8ec000_3">Robusta Helm Chart</label>
 </div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -6248,7 +6248,7 @@
       # Optional
       default_limit: 100  # Max data points to retrieve (default: 100)</code></pre>
 <p>Apply the configuration:</p>
-<pre><code class="language-bash">helm upgrade holmes holmes/holmes --values=values.yaml</code></pre>
+<pre><code class="language-bash">helm upgrade holmes robusta/holmes --values=values.yaml</code></pre>
 </div>
 <div class="tabbed-block">
 <p>When using the <strong>Robusta Helm Chart</strong> (which includes HolmesGPT), update your <code>generated_values.yaml</code>:</p>
@@ -6311,13 +6311,13 @@
 <p><strong>Configuration</strong></p>
 <p>
 <div class="tabbed-set" data-tabs="1:3">
-<input checked="checked" id="__tabbed_2431a74e_14a2_488b_9345_eb865eed252d_1" name="__tabbed_2431a74e_14a2_488b_9345_eb865eed252d" type="radio">
-<input id="__tabbed_2431a74e_14a2_488b_9345_eb865eed252d_2" name="__tabbed_2431a74e_14a2_488b_9345_eb865eed252d" type="radio">
-<input id="__tabbed_2431a74e_14a2_488b_9345_eb865eed252d_3" name="__tabbed_2431a74e_14a2_488b_9345_eb865eed252d" type="radio">
+<input checked="checked" id="__tabbed_57b5a9d4_d304_4b97_9291_5a7703699ed9_1" name="__tabbed_57b5a9d4_d304_4b97_9291_5a7703699ed9" type="radio">
+<input id="__tabbed_57b5a9d4_d304_4b97_9291_5a7703699ed9_2" name="__tabbed_57b5a9d4_d304_4b97_9291_5a7703699ed9" type="radio">
+<input id="__tabbed_57b5a9d4_d304_4b97_9291_5a7703699ed9_3" name="__tabbed_57b5a9d4_d304_4b97_9291_5a7703699ed9" type="radio">
 <div class="tabbed-labels">
-<label for="__tabbed_2431a74e_14a2_488b_9345_eb865eed252d_1">Holmes CLI</label>
-<label for="__tabbed_2431a74e_14a2_488b_9345_eb865eed252d_2">Holmes Helm Chart</label>
-<label for="__tabbed_2431a74e_14a2_488b_9345_eb865eed252d_3">Robusta Helm Chart</label>
+<label for="__tabbed_57b5a9d4_d304_4b97_9291_5a7703699ed9_1">Holmes CLI</label>
+<label for="__tabbed_57b5a9d4_d304_4b97_9291_5a7703699ed9_2">Holmes Helm Chart</label>
+<label for="__tabbed_57b5a9d4_d304_4b97_9291_5a7703699ed9_3">Robusta Helm Chart</label>
 </div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -6342,7 +6342,7 @@
       api_url: https://api.datadoghq.com
       timeout_seconds: 60  # Timeout in seconds (default: 60)</code></pre>
 <p>Apply the configuration:</p>
-<pre><code class="language-bash">helm upgrade holmes holmes/holmes --values=values.yaml</code></pre>
+<pre><code class="language-bash">helm upgrade holmes robusta/holmes --values=values.yaml</code></pre>
 </div>
 <div class="tabbed-block">
 <p>When using the <strong>Robusta Helm Chart</strong> (which includes HolmesGPT), update your <code>generated_values.yaml</code>:</p>
@@ -6394,13 +6394,13 @@
 <p><strong>Configuration</strong></p>
 <p>
 <div class="tabbed-set" data-tabs="1:3">
-<input checked="checked" id="__tabbed_b7247670_63f8_49ac_a10a_0d4f171cfa22_1" name="__tabbed_b7247670_63f8_49ac_a10a_0d4f171cfa22" type="radio">
-<input id="__tabbed_b7247670_63f8_49ac_a10a_0d4f171cfa22_2" name="__tabbed_b7247670_63f8_49ac_a10a_0d4f171cfa22" type="radio">
-<input id="__tabbed_b7247670_63f8_49ac_a10a_0d4f171cfa22_3" name="__tabbed_b7247670_63f8_49ac_a10a_0d4f171cfa22" type="radio">
+<input checked="checked" id="__tabbed_cb942a1d_fca5_4f82_ab39_e5c32769b579_1" name="__tabbed_cb942a1d_fca5_4f82_ab39_e5c32769b579" type="radio">
+<input id="__tabbed_cb942a1d_fca5_4f82_ab39_e5c32769b579_2" name="__tabbed_cb942a1d_fca5_4f82_ab39_e5c32769b579" type="radio">
+<input id="__tabbed_cb942a1d_fca5_4f82_ab39_e5c32769b579_3" name="__tabbed_cb942a1d_fca5_4f82_ab39_e5c32769b579" type="radio">
 <div class="tabbed-labels">
-<label for="__tabbed_b7247670_63f8_49ac_a10a_0d4f171cfa22_1">Holmes CLI</label>
-<label for="__tabbed_b7247670_63f8_49ac_a10a_0d4f171cfa22_2">Holmes Helm Chart</label>
-<label for="__tabbed_b7247670_63f8_49ac_a10a_0d4f171cfa22_3">Robusta Helm Chart</label>
+<label for="__tabbed_cb942a1d_fca5_4f82_ab39_e5c32769b579_1">Holmes CLI</label>
+<label for="__tabbed_cb942a1d_fca5_4f82_ab39_e5c32769b579_2">Holmes Helm Chart</label>
+<label for="__tabbed_cb942a1d_fca5_4f82_ab39_e5c32769b579_3">Robusta Helm Chart</label>
 </div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -6433,7 +6433,7 @@
       max_response_size: 10485760  # Max response size in bytes (default: 10MB)
       allow_custom_endpoints: false  # Allow non-whitelisted endpoints (default: false)</code></pre>
 <p>Apply the configuration:</p>
-<pre><code class="language-bash">helm upgrade holmes holmes/holmes --values=values.yaml</code></pre>
+<pre><code class="language-bash">helm upgrade holmes robusta/holmes --values=values.yaml</code></pre>
 </div>
 <div class="tabbed-block">
 <p>When using the <strong>Robusta Helm Chart</strong> (which includes HolmesGPT), update your <code>generated_values.yaml</code>:</p>
